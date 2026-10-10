@@ -68,19 +68,31 @@
     const aspect = viewer.clientWidth / viewer.clientHeight;
     camera = new THREE.PerspectiveCamera(34, aspect, 0.1, 180);
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // Keep the canvas modest on integrated graphics; the station is an interactive
+    // schematic and does not need retina-sized buffers to remain legible.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(viewer.clientWidth, viewer.clientHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setClearColor('#edf3f0', 1);
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.9;
     viewer.insertBefore(renderer.domElement, markerRoot);
+    renderer.domElement.addEventListener('webglcontextlost', (event) => {
+      event.preventDefault();
+      loading.textContent = 'The browser paused the 3D graphics view. Refresh this page to restore the station model.';
+      loading.classList.remove('hidden');
+    });
+    renderer.domElement.addEventListener('webglcontextrestored', () => {
+      loading.classList.add('hidden');
+      renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    });
 
     scene.add(new THREE.HemisphereLight('#ffffff', '#71858b', 1.0));
     const sun = new THREE.DirectionalLight('#fff4df', 1.25);
     sun.position.set(-18, 32, 22); sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.camera.left = -32; sun.shadow.camera.right = 32;
     sun.shadow.camera.top = 32; sun.shadow.camera.bottom = -32;
     scene.add(sun);
@@ -249,7 +261,9 @@
         const leftArm = new THREE.Mesh(armGeometry, passengerMaterials[i % passengerMaterials.length]); leftArm.position.set(-0.205, 0.52, 0); leftArm.rotation.z = -0.16; person.add(leftArm);
         const rightArm = new THREE.Mesh(armGeometry, passengerMaterials[i % passengerMaterials.length]); rightArm.position.set(0.205, 0.52, 0); rightArm.rotation.z = 0.16; person.add(rightArm);
         person.scale.setScalar(0.78 + (i % 3) * 0.06);
-        person.traverse((part) => { if (part.isMesh) { part.castShadow = true; part.receiveShadow = true; } });
+        // Passenger meshes move every frame. Avoid adding dozens of animated
+        // shadow casters to a scene that must work on integrated laptop GPUs.
+        person.traverse((part) => { if (part.isMesh) { part.castShadow = false; part.receiveShadow = false; } });
         parent.add(person);
         const item = { mesh: person, zone, index: i, phase: (i / peoplePerZone) * 0.82, leftLeg, rightLeg };
         passengers.push(item); passengerZones[zone].push(item);
@@ -314,7 +328,8 @@
     animate();
   } catch (error) {
     console.error('MetroSafe model failed:', error);
-    loading.textContent = 'This device could not start the 3D view. Try a browser with WebGL enabled.';
+    loading.textContent = 'This device could not start the 3D view. Check that browser hardware acceleration and WebGL are enabled, then refresh.';
+    loading.classList.remove('hidden');
   }
 
   function setCamera() {
