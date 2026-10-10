@@ -12,6 +12,7 @@
   ];
   const THREE = window.THREE;
   let renderer, scene, camera, root, groups, train, clock;
+  let renderFailed = false;
   let radius = 41, theta = Math.PI / 4, phi = 1.08;
   let target = THREE ? new THREE.Vector3(0, 3.8, 0) : null;
   let pointer = null, activeLevel = 'all', selectedExit = null;
@@ -327,8 +328,10 @@
     loading.classList.add('hidden');
     animate();
   } catch (error) {
+    renderFailed = true;
     console.error('MetroSafe model failed:', error);
-    loading.textContent = 'This device could not start the 3D view. Check that browser hardware acceleration and WebGL are enabled, then refresh.';
+    const reason = error && error.message ? error.message : String(error);
+    loading.textContent = `The 3D view stopped during startup: ${reason}. Check that browser hardware acceleration and WebGL are enabled, then refresh.`;
     loading.classList.remove('hidden');
   }
 
@@ -359,23 +362,31 @@
   }
 
   function animate() {
+    if (renderFailed) return;
     requestAnimationFrame(animate);
     if (!renderer) return;
-    const elapsed = clock.getElapsedTime();
-    if (train) train.position.z = -6 + Math.sin(elapsed * 0.22) * 5.6;
-    passengers.forEach((person) => {
-      const path = passengerLoops[person.zone];
-      const position = (elapsed * (0.24 + (person.index % 4) * 0.025) + person.phase) % 1;
-      const point = position * path.length;
-      const segment = Math.floor(point), fraction = point - segment;
-      const from = path[segment % path.length], to = path[(segment + 1) % path.length];
-      person.mesh.position.set(from[0] + (to[0] - from[0]) * fraction, from[1] + Math.abs(Math.sin(elapsed * 4 + person.phase * 8)) * 0.035, from[2] + (to[2] - from[2]) * fraction);
-      person.mesh.rotation.y = Math.atan2(to[0] - from[0], to[2] - from[2]);
-      const stride = Math.sin(elapsed * 6 + person.phase * 12) * 0.48;
-      person.leftLeg.rotation.x = stride; person.rightLeg.rotation.x = -stride;
-    });
-    renderer.render(scene, camera);
-    updateMarkers();
+    try {
+      const elapsed = clock.getElapsedTime();
+      if (train) train.position.z = -6 + Math.sin(elapsed * 0.22) * 5.6;
+      passengers.forEach((person) => {
+        const path = passengerLoops[person.zone];
+        const position = (elapsed * (0.24 + (person.index % 4) * 0.025) + person.phase) % 1;
+        const point = position * path.length;
+        const segment = Math.floor(point), fraction = point - segment;
+        const from = path[segment % path.length], to = path[(segment + 1) % path.length];
+        person.mesh.position.set(from[0] + (to[0] - from[0]) * fraction, from[1] + Math.abs(Math.sin(elapsed * 4 + person.phase * 8)) * 0.035, from[2] + (to[2] - from[2]) * fraction);
+        person.mesh.rotation.y = Math.atan2(to[0] - from[0], to[2] - from[2]);
+        const stride = Math.sin(elapsed * 6 + person.phase * 12) * 0.48;
+        person.leftLeg.rotation.x = stride; person.rightLeg.rotation.x = -stride;
+      });
+      renderer.render(scene, camera);
+      updateMarkers();
+    } catch (error) {
+      renderFailed = true;
+      console.error('MetroSafe 3D frame failed:', error);
+      loading.textContent = `The 3D view stopped while drawing: ${error && error.message ? error.message : error}. Refresh after checking browser WebGL support.`;
+      loading.classList.remove('hidden');
+    }
   }
 
   function showLevel(level) {
