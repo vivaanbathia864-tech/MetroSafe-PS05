@@ -20,6 +20,7 @@
   let crowdSurfaces = null;
   let routeStatusNode = document.querySelector('#route-guidance');
   let routeSets = {};
+  let passengerLoops = {};
   const passengers = [];
   const passengerZones = {};
   const mats = {};
@@ -241,7 +242,7 @@
     const headGeometry = new THREE.SphereGeometry(0.145, 8, 7);
     const legGeometry = new THREE.CylinderGeometry(0.052, 0.06, 0.34, 6);
     const armGeometry = new THREE.CylinderGeometry(0.045, 0.052, 0.34, 6);
-    const passengerLoops = {
+    passengerLoops = {
       forecourt: [[-4.7, 8.39, 12.6], [-2.8, 8.39, 11.8], [0, 8.39, 12.4], [3.2, 8.39, 11.8], [4.5, 8.39, 12.6], [1.8, 8.39, 13.2], [-1.8, 8.39, 13.2]],
       concourse: [[-1.25, 4.48, 6.4], [-1.1, 4.48, 4.6], [-0.3, 4.48, 3.0], [1.1, 4.48, 3.2], [1.3, 4.48, 5.2], [0.4, 4.48, 6.5]],
       platform1: [[-5.05, -0.43, -10], [-5.05, -0.43, -6], [-5.05, -0.43, 0], [-5.05, -0.43, 6], [-5.05, -0.43, 10], [-5.05, -0.43, 3], [-5.05, -0.43, -4]],
