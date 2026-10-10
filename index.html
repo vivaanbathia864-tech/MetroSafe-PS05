@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1724">
+  <title>MetroSafe | PS-05 Stadium Surge Desk</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="vendor/three.min.js"></script>
+  <script src="app.js" defer></script>
+  <script src="simulator.js" defer></script>
+</head>
+<body class="ops-page">
+  <header class="topbar">
+    <a class="brand" href="#top"><span class="brand-mark">M</span><span>MetroSafe</span></a>
+    <div class="product-label"><span class="product-divider"></span> EVENT OPERATIONS <span class="ps-badge">PS-05</span></div>
+    <div class="header-status"><span class="offline-dot"></span> OFFLINE READY <span class="status-divider"></span><span>ONE STATION · ONE EVENT</span></div>
+  </header>
+  <main class="page" id="top">
+    <section class="page-heading">
+      <div><div class="eyebrow">METRO OPERATIONS · CROWD SAFETY</div><h1>The Stadium Surge<span>.</span></h1><p>Model the crowd wave, see where pressure builds, and prepare a station-ready response.</p></div>
+      <div class="station-chip"><span class="station-glyph">M</span><span><b>MetroSafe demo station</b><small>Type 1 · side platforms · schematic</small></span></div>
+    </section>
+
+    <section class="main-grid">
+      <aside class="card event-card">
+        <div class="card-heading"><span class="step-no">01</span><div><h2>Event setup</h2><p>Change the event assumptions</p></div></div>
+        <form id="event-form">
+          <label class="field-label" for="event-name">EVENT</label><input id="event-name" type="text" value="Stadium cricket match" maxlength="80">
+          <label class="field-label" for="event-venue">VENUE</label><input id="event-venue" type="text" value="Ahmedabad stadium" maxlength="80">
+          <div class="field-row"><div><label class="field-label" for="attendance">EXPECTED ATTENDANCE</label><div class="number-field"><input id="attendance" type="number" min="100" max="150000" step="100" value="30000"><span>people</span></div></div><div><label class="field-label" for="metro-share">METRO SHARE</label><div class="number-field"><input id="metro-share" type="number" min="1" max="100" step="1" value="35"><span>%</span></div></div></div>
+          <label class="field-label" for="event-end">EVENT ENDS</label><input id="event-end" type="time" value="22:00">
+          <div class="demand-preview"><span class="preview-icon">↗</span><span><small>ESTIMATED METRO RIDERS</small><b id="rider-estimate">10,500</b></span><span class="preview-assumption">all assigned to<br>this demo station</span></div>
+          <button class="button button-primary full-width" type="submit">Generate crowd plan <span>→</span></button>
+        </form>
+        <div class="surge-box"><div class="surge-title"><span class="surge-icon">ϟ</span><div><b>Stress-test the plan</b><small>Compress demand into a sudden release</small></div></div><label class="field-label" for="surge-minute">SURGE STARTS <output id="surge-minute-value">+20 min</output></label><input id="surge-minute" type="range" min="8" max="90" value="20"><button id="surge-button" class="button button-surge full-width" type="button">Inject a 10-minute surge</button><p class="tiny-note">Shifts 22% of expected riders into a 10-minute window. Total attendance stays fixed.</p></div>
+      </aside>
+
+      <section class="card station-card">
+        <div class="station-card-heading"><div class="card-heading compact"><span class="step-no">02</span><div><h2>Live station model</h2><p>Click a level or exit · drag to orbit · scroll to zoom</p></div></div><div class="density-status" id="density-status"><span></span><b>LOW DENSITY</b></div></div>
+        <div class="model-layout"><div class="model-column">
+          <div class="viewer-top"><span><i class="live-dot"></i> CROWD DENSITY <small>SCHEMATIC · NOT TO SCALE</small></span><button id="reset-view" class="icon-button" title="Reset camera" aria-label="Reset camera">⟳</button></div>
+          <div id="viewer" aria-label="Interactive 3D crowd density map of the station">
+            <div class="scene-grid"></div><div id="exit-markers" aria-label="Station exits and map labels"></div>
+            <div class="orientation"><span>N</span><div class="north-arrow">↑</div></div><div class="viewer-help">DRAG TO ROTATE <span>·</span> SCROLL TO ZOOM</div>
+            <div class="heat-key"><span><i class="heat low"></i>LOW</span><span><i class="heat med"></i>BUSY</span><span><i class="heat high"></i>CRITICAL</span></div>
+            <div id="loading" class="loading">Building your station model…</div>
+          </div>
+          <div class="viewer-bottom"><span><i class="legend-dot blue"></i>Platforms</span><span><i class="legend-dot sand"></i>Concourse</span><span><i class="legend-dot track"></i>Tracks</span><span><i class="legend-dot gold"></i>Stairs / exits</span><span><i class="legend-dot teal"></i>Lifts</span><span class="north-label">NORTH ↑</span></div>
+          <div class="timeline-control"><button id="play-button" class="play-button" type="button" aria-label="Play simulation">▶</button><span class="timeline-time" id="current-clock">22:00</span><input id="minute-slider" type="range" min="0" max="120" value="0" aria-label="Simulation minute"><span id="minute-label">Minute 0</span></div>
+        </div>
+        <aside class="map-side">
+          <div class="map-side-section"><div class="section-heading"><span>A</span><h3>Station levels</h3></div><div class="level-list" role="group" aria-label="Station levels">
+            <button class="level-option selected" data-level="all"><span class="level-symbol">◇</span><span><b>Exploded view</b><small>All levels together</small></span><span class="level-chevron">↗</span></button>
+            <button class="level-option" data-level="surface"><span class="level-symbol">↑</span><span><b>Street level</b><small>Entrance & hold zone</small></span><span class="level-chevron">↗</span></button>
+            <button class="level-option" data-level="concourse"><span class="level-symbol">▱</span><span><b>Concourse</b><small>Ticketing & circulation</small></span><span class="level-chevron">↗</span></button>
+            <button class="level-option" data-level="platform"><span class="level-symbol">Ⅱ</span><span><b>Platform level</b><small>Waiting areas & tracks</small></span><span class="level-chevron">↗</span></button>
+          </div></div>
+          <div class="map-side-section"><div class="section-heading"><span>B</span><h3>Street exits <em>4</em></h3></div><div class="exit-list">
+            <button class="exit-option" data-exit="A"><span class="exit-letter">A</span><span><b>North west</b><small>Street stairs</small></span></button><button class="exit-option" data-exit="B"><span class="exit-letter">B</span><span><b>North east</b><small>Street stairs</small></span></button>
+            <button class="exit-option" data-exit="C"><span class="exit-letter">C</span><span><b>South west</b><small>Street stairs</small></span></button><button class="exit-option" data-exit="D"><span class="exit-letter">D</span><span><b>South east</b><small>Street stairs</small></span></button>
+          </div></div>
+          <div class="map-caveat"><b>Model note</b><p>Exit names and locations are illustrative; the supplied plan does not provide surveyed exit coordinates.</p></div>
+        </aside></div>
+      </section>
+
+      <aside class="card response-card">
+        <div class="card-heading"><span class="step-no">03</span><div><h2>Recommended response</h2><p id="response-caption">Baseline event forecast</p></div></div>
+        <div class="stat-grid"><div class="stat"><small>PEAK ARRIVALS</small><b id="peak-rate">--</b><span>passengers / min</span></div><div class="stat"><small>EST. METRO RIDERS</small><b id="riders-stat">--</b><span>assigned to this station</span></div></div>
+        <div class="response-block"><div class="response-label"><span class="response-icon gates-icon">▥</span><b>Ticket gates</b></div><div class="response-value"><strong id="gate-recommendation">--</strong><small id="gate-detail">Calculating capacity…</small></div></div>
+        <div class="response-block"><div class="response-label"><span class="response-icon train-icon">↗</span><b>Train service</b></div><div class="response-value"><strong id="train-recommendation">--</strong><small id="train-detail">Checking platform demand…</small></div></div>
+        <div class="response-block"><div class="response-label"><span class="response-icon hold-icon">⌂</span><b>Holding plan</b></div><div class="response-value"><strong id="hold-recommendation">--</strong><small id="hold-detail">Keeping stairs and platforms clear.</small></div></div>
+        <div class="safety-rule"><span>!</span><p><b>Never hold a queue on stairs or the platform edge.</b> Meter passengers at the external forecourt.</p></div>
+        <div class="assumption-foot">Prototype capacity assumptions · review with station operations before real use</div>
+      </aside>
+    </section>
+
+    <section class="analysis-grid">
+      <article class="card chart-card"><div class="section-title-row"><div><div class="eyebrow">DEMAND PROFILE</div><h2>Passenger arrivals by minute</h2><p>Estimated arrivals to this station after event end</p></div><div class="chart-total"><b id="chart-riders">10,500</b><small>ESTIMATED RIDERS</small></div></div><div class="chart-wrap"><canvas id="arrival-chart" aria-label="Minute-by-minute expected arrivals chart"></canvas></div><div class="chart-foot"><span><i></i> Baseline</span><span><i class="surge-chart-key"></i> Surge scenario</span><span id="peak-time-label" class="peak-time-label">Peak window: --</span></div></article>
+      <article class="card action-card"><div class="section-title-row"><div><div class="eyebrow">CONTROL-ROOM RUNBOOK</div><h2>Timed action plan</h2><p>Actions are recalculated when demand changes</p></div><span class="live-tag">UPDATING</span></div><ol id="action-plan" class="action-list"></ol></article>
+      <article class="card announcement-card"><div class="section-title-row"><div><div class="eyebrow">PA / PLATFORM ANNOUNCEMENTS</div><h2>Ready to announce</h2><p>Generated from the current gate and holding plan</p></div><span class="speaker-mark">◖</span></div><div class="language-tabs" role="tablist"><button class="language-tab active" data-lang="en" role="tab">English</button><button class="language-tab" data-lang="hi" role="tab">हिन्दी</button><button class="language-tab" data-lang="gu" role="tab">ગુજરાતી</button></div><div id="announcement-text" class="announcement-text" role="tabpanel"></div><button id="copy-announcement" class="copy-button" type="button">Copy announcement <span>▢</span></button></article>
+    </section>
+
+    <details class="card log-card"><summary><span class="method-summary-icon">≡</span><span><b>Full minute-by-minute simulation log</b><small>120-minute arrivals, gate settings, queues, platform load, and train boardings</small></span><span class="summary-chevron">⌄</span></summary><div class="table-scroll"><table><thead><tr><th>Clock</th><th>Minute</th><th>Arrivals</th><th>Gates</th><th>Forecourt</th><th>Concourse</th><th>Platforms</th><th>Boarded</th><th>Minute-level action</th></tr></thead><tbody id="minute-log"></tbody></table></div></details>
+
+    <details class="card method-card"><summary><span class="method-summary-icon">i</span><span><b>How the prototype works</b><small>Demand model, capacities, assumptions and limits</small></span><span class="summary-chevron">⌄</span></summary><div class="method-content" id="method-content"></div></details>
+    <footer class="page-footer"><span>MetroSafe · PS-05 Stadium Surge prototype</span><span>Offline-first demo · no live passenger, train, or station sensor data</span><a href="README.md">Execution plan & technical guide ↗</a></footer>
+  </main>
+</body>
+</html>

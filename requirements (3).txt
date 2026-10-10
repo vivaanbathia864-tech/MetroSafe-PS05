@@ -1,0 +1,17 @@
+# Metro hackathon Python libraries
+# Install with: python -m pip install -r requirements.txt
+#
+# Core data processing, graph algorithms, basic ML, and plotting:
+numpy
+pandas
+networkx
+scikit-learn
+matplotlib
+#
+# Optional dashboard and local API for connecting Python to a web/3D app:
+streamlit
+fastapi
+uvicorn
+#
+# Optional testing:
+pytest
