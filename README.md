@@ -10,17 +10,17 @@ Open `index.html` in a modern desktop browser with WebGL enabled. No server, pac
 
 1. Enter the event attendance, end time and expected metro share. The venue is editable too.
 2. Choose **Generate crowd plan**. MetroSafe calculates riders and a 120-minute arrival curve for the single demo station.
-3. Move the timeline slider or press play. The map recolors the forecourt, concourse and both platforms for the selected minute. The full minute table is below the chart.
-4. Review the number of ticket gates, suggested event headway, external holding area and timed runbook.
-5. Choose English, Hindi or Gujarati and copy the draft announcement.
-6. Set the surge start time and choose **Test 10-minute surge**. The model re-times 22% of riders from outside that window into the ten-minute pulse, preserves the total rider count, then recalculates the peak, gate plan, train plan, density map, action plan and announcements. Choose **Restore baseline plan** to compare again.
+3. Move the timeline slider or press play. Animated passenger figures scale with modeled occupancy, while the floor zones change from green to amber to red.
+4. Follow the glowing green path: it chooses the less-loaded platform and switches to a marked outside holding route when a critical bottleneck needs arrivals held. A red segment identifies a route through a critical zone. This is an illustrative route recommendation, not live wayfinding.
+5. Review the recommended ticket-gate configuration, train headway and holding area in **Plan at a glance**. Expand **Response tools** for the arrival chart, timed action plan and English/Hindi/Gujarati announcements.
+6. Set the surge start time and choose **Test 10-minute surge**. The model re-times 22% of riders from outside that window into the ten-minute pulse, preserves the total rider count, then recalculates the peak, gate plan, train plan, animated passenger layer, route, action plan and announcements. Choose **Restore baseline plan** to compare again.
 7. Open **How the prototype works** for formulas, limits and assumptions.
 
 ## Project files
 
 - `index.html` — event setup, station view, recommendations, chart and runbook.
 - `style.css` — responsive control-room interface and density labels.
-- `app.js` — Three.js station model, level/exit interaction, and crowd heat overlays.
+- `app.js` — Three.js station model, animated passenger figures, congestion-responsive glowing routes, level/exit interaction, and crowd heat overlays.
 - `simulator.js` — minute-arrival, queue, train, recommendation, chart, timeline and announcement logic.
 - `vendor/three.min.js` — bundled Three.js r128 runtime (MIT licensed).
 - `docs/OPERATING_MODEL.md` — detailed model explanation and assumptions.

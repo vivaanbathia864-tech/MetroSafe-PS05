@@ -22,13 +22,8 @@
       <div class="station-chip"><span class="station-glyph">M</span><span><b>MetroSafe demo station</b><small>Type 1 · side platforms · schematic</small></span></div>
     </section>
 
-    <section class="quick-guide" aria-labelledby="quick-guide-title">
-      <div class="quick-guide-heading"><span class="guide-spark">✦</span><div><h2 id="quick-guide-title">First time here? Start with these 3 steps</h2><p>Use the sample event or replace it with your assumptions. Crowd values are simulated, not live station data.</p></div><a class="guide-more" href="#simulation-method">How is this estimated?</a></div>
-      <ol class="guide-steps">
-        <li><span class="guide-number">1</span><div><b>Set the event</b><p>Enter attendance, metro share and the event end time. The rider estimate updates as you type.</p><a class="guide-link" href="#event-name">Go to event inputs →</a></div></li>
-        <li><span class="guide-number">2</span><div><b>Build and explore</b><p>Use the sample plan, or select <em>Update crowd plan</em> after changing inputs. Drag the timeline to see queues minute by minute.</p><a class="guide-link" href="#viewer">Go to station model →</a></div></li>
-        <li><span class="guide-number">3</span><div><b>Try a surge</b><p>Move the surge slider and select <em>Test 10-minute surge</em>. Select it again to restore the baseline.</p><a class="guide-link" href="#surge-button">Go to surge test →</a></div></li>
-      </ol>
+    <section class="quick-guide" aria-label="How to use MetroSafe">
+      <span class="guide-spark">✦</span><b>Quick start</b><span><i>1</i> Set event details</span><span class="guide-arrow">→</span><span><i>2</i> Follow the moving passengers and green route</span><span class="guide-arrow">→</span><span><i>3</i> Test a surge and review the response</span><a class="guide-more" href="#simulation-method">How estimates work</a>
     </section>
 
     <section class="main-grid">
@@ -56,7 +51,8 @@
             <div class="heat-key"><span><i class="heat low"></i>LOW</span><span><i class="heat med"></i>BUSY</span><span><i class="heat high"></i>CRITICAL</span></div>
             <div id="loading" class="loading">Building your station model…</div>
           </div>
-          <div class="viewer-bottom"><span><i class="legend-dot blue"></i>Platforms</span><span><i class="legend-dot sand"></i>Concourse</span><span><i class="legend-dot track"></i>Tracks</span><span><i class="legend-dot gold"></i>Stairs / exits</span><span><i class="legend-dot teal"></i>Lifts</span><span class="north-label">NORTH ↑</span></div>
+          <div class="viewer-bottom"><span><i class="legend-dot blue"></i>Platforms</span><span><i class="legend-dot sand"></i>Concourse</span><span><i class="legend-dot gold"></i>Stairs / exits</span><span><i class="legend-dot teal"></i>Lifts</span><span><i class="legend-dot people"></i>Moving passengers</span><span><i class="legend-dot route"></i>Suggested route</span><span class="north-label">NORTH ↑</span></div>
+          <div id="route-guidance" class="route-guidance" role="status" aria-live="polite"><span class="route-pulse"></span>Preparing the suggested crowd route…</div>
           <div class="timeline-caption"><b>Explore time</b><span>Drag the slider or press play to follow the crowd.</span></div><div class="timeline-control"><button id="play-button" class="play-button" type="button" aria-label="Play simulation">▶</button><span class="timeline-time" id="current-clock">22:00</span><input id="minute-slider" type="range" min="0" max="119" value="0" aria-label="Minutes after event end"><span id="minute-label">+0 min</span></div>
         </div>
         <aside class="map-side">
@@ -86,11 +82,11 @@
       </aside>
     </section>
 
-    <section class="analysis-grid">
+    <details class="analysis-details"><summary><span class="method-summary-icon">↗</span><span><b>Response tools</b><small>Arrival chart · timed action plan · multilingual announcements</small></span><span class="summary-chevron">⌄</span></summary><section class="analysis-grid">
       <article class="card chart-card"><div class="section-title-row"><div><div class="eyebrow">DEMAND PROFILE</div><h2>Passenger arrivals by minute</h2><p>Each point is people arriving in that minute, not people waiting.</p></div><div class="chart-total"><b id="chart-riders">10,500</b><small>ESTIMATED RIDERS</small></div></div><div class="chart-wrap"><canvas id="arrival-chart" aria-label="Minute-by-minute expected arrivals chart"></canvas></div><div class="chart-foot"><span><i></i> Baseline</span><span><i class="surge-chart-key"></i> Surge scenario</span><span id="peak-time-label" class="peak-time-label">Busiest minute: --</span></div></article>
       <article class="card action-card"><div class="section-title-row"><div><div class="eyebrow">CONTROL-ROOM RUNBOOK</div><h2>Timed action plan</h2><p>Actions are recalculated when demand changes</p></div><span class="live-tag">UPDATING</span></div><ol id="action-plan" class="action-list"></ol></article>
       <article class="card announcement-card"><div class="section-title-row"><div><div class="eyebrow">PA / PLATFORM ANNOUNCEMENTS</div><h2>Ready to announce</h2><p>Generated from the current gate and holding plan</p></div><span class="speaker-mark">◖</span></div><div class="language-tabs" role="tablist"><button class="language-tab active" data-lang="en" role="tab">English</button><button class="language-tab" data-lang="hi" role="tab">हिन्दी</button><button class="language-tab" data-lang="gu" role="tab">ગુજરાતી</button></div><div id="announcement-text" class="announcement-text" role="tabpanel"></div><button id="copy-announcement" class="copy-button" type="button">Copy announcement <span>▢</span></button></article>
-    </section>
+    </section></details>
 
     <details class="card log-card"><summary><span class="method-summary-icon">≡</span><span><b>Full minute-by-minute simulation log</b><small>120-minute arrivals, gate settings, queues, platform load, and train boardings</small></span><span class="summary-chevron">⌄</span></summary><div class="table-scroll"><table><thead><tr><th>Clock</th><th>Minute</th><th>Arrivals</th><th>Gates</th><th>Forecourt</th><th>Concourse</th><th>Platforms</th><th>Boarded</th><th>Minute-level action</th></tr></thead><tbody id="minute-log"></tbody></table></div></details>
 

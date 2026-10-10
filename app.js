@@ -17,6 +17,10 @@
   let pointer = null, activeLevel = 'all', selectedExit = null;
   const markers = new Map();
   let crowdSurfaces = null;
+  let routeStatusNode = document.querySelector('#route-guidance');
+  let routeSets = {};
+  const passengers = [];
+  const passengerZones = {};
   const mats = {};
 
   if (!THREE) {
@@ -211,6 +215,90 @@
       platform2: box(platform, 5.05, -0.43, 0, 3.35, 0.025, 21, heatSurfaceMaterial(), { cast: false }),
     };
 
+    // High-contrast, low-poly people stay visible even when the floor heatmap is pale.
+    const passengerMaterials = [
+      material('#f08a24', { roughness: 0.56 }),
+      material('#147d91', { roughness: 0.56 }),
+      material('#d14f58', { roughness: 0.56 }),
+      material('#6656bd', { roughness: 0.56 }),
+    ];
+    const trouserMaterial = material('#26394d', { roughness: 0.72 });
+    const skinMaterial = material('#efc5a2', { roughness: 0.8 });
+    const torsoGeometry = new THREE.CylinderGeometry(0.16, 0.2, 0.48, 7);
+    const headGeometry = new THREE.SphereGeometry(0.145, 8, 7);
+    const legGeometry = new THREE.CylinderGeometry(0.052, 0.06, 0.34, 6);
+    const armGeometry = new THREE.CylinderGeometry(0.045, 0.052, 0.34, 6);
+    const passengerLoops = {
+      forecourt: [[-4.7, 8.39, 12.6], [-2.8, 8.39, 11.8], [0, 8.39, 12.4], [3.2, 8.39, 11.8], [4.5, 8.39, 12.6], [1.8, 8.39, 13.2], [-1.8, 8.39, 13.2]],
+      concourse: [[-1.25, 4.48, 6.4], [-1.1, 4.48, 4.6], [-0.3, 4.48, 3.0], [1.1, 4.48, 3.2], [1.3, 4.48, 5.2], [0.4, 4.48, 6.5]],
+      platform1: [[-5.05, -0.43, -10], [-5.05, -0.43, -6], [-5.05, -0.43, 0], [-5.05, -0.43, 6], [-5.05, -0.43, 10], [-5.05, -0.43, 3], [-5.05, -0.43, -4]],
+      platform2: [[5.05, -0.43, -10], [5.05, -0.43, -6], [5.05, -0.43, 0], [5.05, -0.43, 6], [5.05, -0.43, 10], [5.05, -0.43, 3], [5.05, -0.43, -4]],
+    };
+    const passengerParents = { forecourt: surface, concourse, platform1: platform, platform2: platform };
+    const peoplePerZone = 16;
+    Object.entries(passengerParents).forEach(([zone, parent]) => {
+      passengerZones[zone] = [];
+      for (let i = 0; i < peoplePerZone; i++) {
+        const person = new THREE.Group();
+        const torso = new THREE.Mesh(torsoGeometry, passengerMaterials[i % passengerMaterials.length]);
+        torso.position.y = 0.51; person.add(torso);
+        const head = new THREE.Mesh(headGeometry, skinMaterial);
+        head.position.y = 0.84; person.add(head);
+        const leftLeg = new THREE.Mesh(legGeometry, trouserMaterial); leftLeg.position.set(-0.085, 0.16, 0); person.add(leftLeg);
+        const rightLeg = new THREE.Mesh(legGeometry, trouserMaterial); rightLeg.position.set(0.085, 0.16, 0); person.add(rightLeg);
+        const leftArm = new THREE.Mesh(armGeometry, passengerMaterials[i % passengerMaterials.length]); leftArm.position.set(-0.205, 0.52, 0); leftArm.rotation.z = -0.16; person.add(leftArm);
+        const rightArm = new THREE.Mesh(armGeometry, passengerMaterials[i % passengerMaterials.length]); rightArm.position.set(0.205, 0.52, 0); rightArm.rotation.z = 0.16; person.add(rightArm);
+        person.scale.setScalar(0.78 + (i % 3) * 0.06);
+        person.traverse((part) => { if (part.isMesh) { part.castShadow = true; part.receiveShadow = true; } });
+        parent.add(person);
+        const item = { mesh: person, zone, index: i, phase: (i / peoplePerZone) * 0.82, leftLeg, rightLeg };
+        passengers.push(item); passengerZones[zone].push(item);
+      }
+    });
+
+    // Green route tubes are separated by level so the level controls stay meaningful.
+    const routeCore = new THREE.MeshBasicMaterial({ color: '#23ed75', transparent: true, opacity: 0.98, depthWrite: false, toneMapped: false });
+    const routeGlow = new THREE.MeshBasicMaterial({ color: '#14d967', transparent: true, opacity: 0.2, depthWrite: false, toneMapped: false });
+    const routeBlocked = new THREE.MeshBasicMaterial({ color: '#e64d49', transparent: true, opacity: 0.65, depthWrite: false, toneMapped: false });
+    function routeTube(parent, points, radius, mat) {
+      const vectors = points.map((p) => new THREE.Vector3(...p));
+      const curve = new THREE.CatmullRomCurve3(vectors, false, 'centripetal');
+      const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(28, points.length * 10), radius, 8, false), mat);
+      mesh.renderOrder = 9; mesh.frustumCulled = false; parent.add(mesh); return mesh;
+    }
+    function makeRoute(name, side, exitId, hold = false) {
+      const route = { surface: new THREE.Group(), concourse: new THREE.Group(), platform: new THREE.Group() };
+      surface.add(route.surface); concourse.add(route.concourse); platform.add(route.platform);
+      Object.values(route).forEach((g) => { g.visible = false; });
+      if (hold) {
+        const direction = side;
+        routeTube(route.surface, [[0, 8.43, 12], [direction * 3.5, 8.43, 13.1], [direction * 7.5, 8.43, 13.8], [direction * 10.5, 8.43, 12.8]], 0.14, routeGlow);
+        routeTube(route.surface, [[0, 8.43, 12], [direction * 3.5, 8.43, 13.1], [direction * 7.5, 8.43, 13.8], [direction * 10.5, 8.43, 12.8]], 0.055, routeCore);
+        // A small green holding-area beacon marks the safe staging point.
+        const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.48, 0.12, 16), new THREE.MeshBasicMaterial({ color: '#29ea78', transparent: true, opacity: 0.78, toneMapped: false }));
+        beacon.position.set(direction * 10.5, 8.48, 12.8); beacon.renderOrder = 10; route.surface.add(beacon);
+        return route;
+      }
+      const exit = exits.find((item) => item.id === exitId);
+      const [x, , z] = exit.pos;
+      const forecourtPath = [[0, 8.43, 12], [side * 2.5, 8.43, 8.8], [x * 0.72, 8.55, z * 0.48], [x, 8.55, z], [x, 7.7, z + (z < 0 ? 0.62 : -0.62)], [x, 6.5, z + (z < 0 ? 1.0 : -1.0)], [x, 5.5, z + (z < 0 ? 1.5 : -1.5)], [x, 4.55, z + (z < 0 ? 2.0 : -2.0)]];
+      const concoursePath = [[x, 4.55, z + (z < 0 ? 2.0 : -2.0)], [side * 6.2, 4.55, z * 0.35], [side * 3.2, 4.55, -0.2], [0, 4.55, 1.7], [side * 2.5, 4.55, 1.4], [side * 4.45, 3.0, 0.15], [side * 4.65, 2.0, 0.7]];
+      const platformPath = [[side * 4.65, 2.0, 0.7], [side * 5.05, 0.5, 2.5], [side * 5.05, 0.45, 6.5]];
+      [[forecourtPath, route.surface], [concoursePath, route.concourse], [platformPath, route.platform]].forEach(([points, parent]) => {
+        routeTube(parent, points, 0.21, routeGlow);
+        routeTube(parent, points, 0.07, routeCore);
+      });
+      return route;
+    }
+    routeSets.platform1 = makeRoute('platform1', -1, 'A');
+    routeSets.platform2 = makeRoute('platform2', 1, 'B');
+    routeSets.hold = makeRoute('hold', -1, null, true);
+    routeSets.blocked = { surface: new THREE.Group(), concourse: new THREE.Group(), platform: new THREE.Group() };
+    surface.add(routeSets.blocked.surface); concourse.add(routeSets.blocked.concourse); platform.add(routeSets.blocked.platform);
+    routeTube(routeSets.blocked.concourse, [[0, 4.51, 6], [0, 4.51, 3.5], [0, 4.51, 1.7]], 0.17, routeBlocked);
+    routeTube(routeSets.blocked.platform, [[-4.45, 2.2, 0.15], [-5.05, 0.55, 2.5], [-5.05, 0.45, 6.5]], 0.17, routeBlocked);
+    routeSets.blocked.surface.visible = false; routeSets.blocked.concourse.visible = false; routeSets.blocked.platform.visible = false;
+
     groups = { surface, concourse, platform };
     exits.forEach((exit) => {
       const button = document.createElement('button');
@@ -260,6 +348,17 @@
     if (!renderer) return;
     const elapsed = clock.getElapsedTime();
     if (train) train.position.z = -6 + Math.sin(elapsed * 0.22) * 5.6;
+    passengers.forEach((person) => {
+      const path = passengerLoops[person.zone];
+      const position = (elapsed * (0.24 + (person.index % 4) * 0.025) + person.phase) % 1;
+      const point = position * path.length;
+      const segment = Math.floor(point), fraction = point - segment;
+      const from = path[segment % path.length], to = path[(segment + 1) % path.length];
+      person.mesh.position.set(from[0] + (to[0] - from[0]) * fraction, from[1] + Math.abs(Math.sin(elapsed * 4 + person.phase * 8)) * 0.035, from[2] + (to[2] - from[2]) * fraction);
+      person.mesh.rotation.y = Math.atan2(to[0] - from[0], to[2] - from[2]);
+      const stride = Math.sin(elapsed * 6 + person.phase * 12) * 0.48;
+      person.leftLeg.rotation.x = stride; person.rightLeg.rotation.x = -stride;
+    });
     renderer.render(scene, camera);
     updateMarkers();
   }
@@ -326,7 +425,34 @@
         const ratio = count / capacity;
         const color = ratio >= 0.8 ? '#d94f49' : ratio >= 0.5 ? '#e9a332' : '#38a875';
         crowdSurfaces[name].material.color.set(color);
+        const agents = passengerZones[name];
+        if (agents) {
+          // Avatars are representative markers; scale their number with the modeled occupancy.
+          const visibleCount = Math.min(agents.length, 2 + Math.round(Math.min(1.25, ratio) * (agents.length - 2)));
+          agents.forEach((agent, index) => { agent.mesh.visible = index < visibleCount; });
+        }
       });
+      const p1 = (loads.platform1 || 0) / Math.max(1, loads.platformCapacity || 1);
+      const p2 = (loads.platform2 || 0) / Math.max(1, loads.platformCapacity || 1);
+      const forecourt = (loads.forecourt || 0) / Math.max(1, loads.forecourtCapacity || 1);
+      const concourseLoad = (loads.concourse || 0) / Math.max(1, loads.concourseCapacity || 1);
+      const hold = forecourt >= 0.8 || concourseLoad >= 0.8 || (p1 >= 0.8 && p2 >= 0.8);
+      const chosen = p1 <= p2 ? 'platform1' : 'platform2';
+      Object.entries(routeSets).forEach(([name, route]) => {
+        if (name === 'blocked') return;
+        const show = name === (hold ? 'hold' : chosen);
+        Object.values(route).forEach((group) => { group.visible = show; });
+      });
+      const platformBlocked = Math.max(p1, p2) >= 0.8;
+      routeSets.blocked.concourse.visible = concourseLoad >= 0.8;
+      routeSets.blocked.platform.visible = !hold && platformBlocked;
+      const targetName = chosen === 'platform1' ? 'Platform 1 (west)' : 'Platform 2 (east)';
+      const text = hold
+        ? `Congestion response: hold new arrivals in the marked street-level holding area; the green route redirects away from the overloaded ${concourseLoad >= 0.8 ? 'concourse' : forecourt >= 0.8 ? 'forecourt' : 'platforms'}.`
+        : platformBlocked
+          ? `Rerouted: follow the green path via Exit ${chosen === 'platform1' ? 'A' : 'B'} and the less-loaded ${targetName}; the red path marks the congested platform route.`
+          : `Suggested route: follow the green path via Exit ${chosen === 'platform1' ? 'A' : 'B'} to ${targetName}. Passenger figures and route update with the selected simulation minute.`;
+      if (routeStatusNode) routeStatusNode.textContent = text;
     },
   };
 })();

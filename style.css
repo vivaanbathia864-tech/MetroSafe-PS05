@@ -66,3 +66,29 @@ input[type=text],input[type=time],input[type=number]{font-size:13px;height:38px}
 .page-footer{font-size:9px}
 @media(max-width:1050px){.guide-steps{grid-template-columns:1fr 1fr}.guide-steps li:last-child{grid-column:1/-1}}
 @media(max-width:720px){.quick-guide{padding:13px}.quick-guide-heading{align-items:flex-start}.guide-more{margin-left:0}.quick-guide-heading{flex-wrap:wrap}.guide-steps{grid-template-columns:1fr}.guide-steps li:last-child{grid-column:auto}.guide-steps p{font-size:11px}.timeline-caption{align-items:flex-start;flex-direction:column;gap:3px}}
+
+/* A compact onboarding strip keeps the main controls and station in focus. */
+.quick-guide{display:flex;align-items:center;gap:12px;padding:11px 15px;margin:0 0 14px;background:#fff;border:1px solid var(--line);border-radius:9px;color:#53656d;font-size:10px}
+.quick-guide .guide-spark{color:var(--blue);font-size:15px}
+.quick-guide>b{font-size:11px;color:#253d50;white-space:nowrap}
+.quick-guide>span:not(.guide-spark,.guide-arrow){white-space:nowrap}
+.quick-guide>span i{font-style:normal;display:inline-grid;place-items:center;width:17px;height:17px;margin-right:4px;border-radius:50%;background:#eef2ff;color:var(--blue);font-size:9px;font-weight:800}
+.guide-arrow{color:#a3afb3}
+.quick-guide .guide-more{margin-left:auto;font-size:9px;white-space:nowrap}
+.viewer-bottom{height:auto;min-height:32px;flex-wrap:wrap;row-gap:5px;padding:7px 10px}
+.legend-dot.people{background:#f08a24;box-shadow:0 0 0 2px #147d9133}
+.legend-dot.route{background:#23ed75;box-shadow:0 0 7px #23ed75}
+.route-guidance{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;background:#f1fbf5;border-top:1px solid #e0f1e6;color:#315c46;font-size:10px;line-height:1.45;min-height:38px}
+.route-pulse{width:9px;height:9px;flex:none;margin-top:2px;border-radius:50%;background:#22c96b;box-shadow:0 0 0 4px #22c96b26,0 0 12px #22c96b}
+.analysis-details,.log-card,.method-card{margin-top:13px}
+.analysis-details{padding:0 14px;background:#fff;border:1px solid var(--line);border-radius:11px}
+.analysis-details>summary{list-style:none;display:flex;align-items:center;gap:10px;min-height:48px;cursor:pointer}
+.analysis-details>summary::-webkit-details-marker{display:none}
+.analysis-details>summary>span:nth-child(2){display:grid;gap:3px}
+.analysis-details>summary b{font-size:11px;color:var(--ink)}
+.analysis-details>summary small{font-size:9px;color:#849096}
+.analysis-details>.analysis-grid{margin:0 0 14px}
+.analysis-details[open] .summary-chevron{transform:rotate(180deg)}
+.feature-guide{margin-top:10px}
+@media(max-width:1050px){.quick-guide{flex-wrap:wrap;gap:8px 11px}.quick-guide .guide-more{margin-left:auto}}
+@media(max-width:720px){.quick-guide{align-items:flex-start;gap:8px;padding:10px 12px}.quick-guide>b{margin-right:auto}.quick-guide>span:not(.guide-spark,.guide-arrow){width:100%;white-space:normal}.guide-arrow{display:none}.quick-guide .guide-more{margin-left:0}.viewer-bottom{gap:8px}.route-guidance{font-size:9px}}
