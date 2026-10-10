@@ -11,8 +11,8 @@ The supplied drawings support a schematic Type 1 side-platform station model. Ex
 - [x] Keep the project in `C:\Users\vivaa\Desktop\MetroSafe`.
 - [x] Preserve the existing offline 3D station explorer and its locally bundled Three.js dependency.
 - [x] Capture the PS-05 scope, assumptions and staged build plan in this roadmap.
-- [ ] Create a private GitHub repository named `MetroSafe-PS05` under the project owner’s account.
-- [ ] Push the current project as the initial `main` branch checkpoint.
+- [x] Create a private GitHub repository named `MetroSafe-PS05` under the project owner’s account.
+- [x] Push the current project as the initial `main` branch checkpoint.
 
 ## Build roadmap
 
