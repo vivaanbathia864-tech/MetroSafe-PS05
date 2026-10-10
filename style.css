@@ -92,3 +92,12 @@ input[type=text],input[type=time],input[type=number]{font-size:13px;height:38px}
 .feature-guide{margin-top:10px}
 @media(max-width:1050px){.quick-guide{flex-wrap:wrap;gap:8px 11px}.quick-guide .guide-more{margin-left:auto}}
 @media(max-width:720px){.quick-guide{align-items:flex-start;gap:8px;padding:10px 12px}.quick-guide>b{margin-right:auto}.quick-guide>span:not(.guide-spark,.guide-arrow){width:100%;white-space:normal}.guide-arrow{display:none}.quick-guide .guide-more{margin-left:0}.viewer-bottom{gap:8px}.route-guidance{font-size:9px}}
+
+#station-labels{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+.station-tag{position:absolute;transform:translate(-50%,-50%);display:grid;gap:2px;padding:5px 7px;border:1px solid #ffffffd9;border-radius:6px;color:#fff;white-space:nowrap;box-shadow:0 3px 12px #17293530;text-shadow:0 1px 2px #17293555}
+.station-tag b{font-size:8px;letter-spacing:.45px}
+.station-tag small{font-size:7px;opacity:.94}
+.station-tag.drop{background:#207c6a}
+.station-tag.gate{background:#85643b}
+.station-tag.wait{background:#227e69}
+.loading.hidden{display:none}

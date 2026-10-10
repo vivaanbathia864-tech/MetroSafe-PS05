@@ -1,6 +1,7 @@
 (() => {
   const viewer = document.querySelector('#viewer');
   const markerRoot = document.querySelector('#exit-markers');
+  const stationLabelRoot = document.querySelector('#station-labels');
   const loading = document.querySelector('#loading');
   const levelButtons = [...document.querySelectorAll('.level-option')];
   const exitButtons = [...document.querySelectorAll('.exit-option')];
@@ -20,9 +21,13 @@
   let crowdSurfaces = null;
   let routeStatusNode = document.querySelector('#route-guidance');
   let routeSets = {};
-  let passengerLoops = {};
+  let passengerTargetCounts = { forecourt: 4, concourse: 5, platform1: 5, platform2: 5 };
+  const movementPlans = {};
+  let currentJourneySeconds = 34;
+  let passengerRoot = null;
+  let routeChoice = 'platform1';
   const passengers = [];
-  const passengerZones = {};
+  const stationLabels = [];
   const mats = {};
 
   if (!THREE) {
@@ -188,6 +193,15 @@
     const canopy = box(surface, 0, 9.89, 0, 10, 0.18, 8.2, mats.white);
     canopy.material = material('#f8fbf8', { transparent: true, opacity: 0.78 });
     for (const side of [-1, 1]) box(surface, side * 5.05, 9.53, 0, 0.15, 0.68, 8, mats.glass, { cast: false });
+    // Drop-off and waiting areas are visibly marked as the start and destination of passenger flow.
+    const dropMarker = new THREE.Mesh(new THREE.RingGeometry(0.65, 0.82, 32), new THREE.MeshBasicMaterial({ color: '#258c78', side: THREE.DoubleSide }));
+    dropMarker.rotation.x = -Math.PI / 2; dropMarker.position.set(0, 8.43, 15); surface.add(dropMarker);
+    cylinder(surface, 0, 8.37, 15, 0.34, 0.045, material('#258c78', { emissive: '#1d6c5d', emissiveIntensity: 0.35 }), 20);
+    for (const side of [-1, 1]) {
+      const waitingPad = box(platform, side * 5.05, -0.435, 8.3, 2.75, 0.025, 4.4, new THREE.MeshBasicMaterial({ color: '#25a783', transparent: true, opacity: 0.34, depthWrite: false }), { cast: false });
+      waitingPad.renderOrder = 2;
+      for (const z of [6.15, 10.45]) box(platform, side * 5.05, -0.417, z, 2.75, 0.025, 0.075, material('#178a70'), { cast: false });
+    }
     // Four stair runs link the surface entrances to the concourse level.
     const stairData = exits;
     stairData.forEach((exit) => {
@@ -242,17 +256,9 @@
     const headGeometry = new THREE.SphereGeometry(0.145, 8, 7);
     const legGeometry = new THREE.CylinderGeometry(0.052, 0.06, 0.34, 6);
     const armGeometry = new THREE.CylinderGeometry(0.045, 0.052, 0.34, 6);
-    passengerLoops = {
-      forecourt: [[-4.7, 8.39, 12.6], [-2.8, 8.39, 11.8], [0, 8.39, 12.4], [3.2, 8.39, 11.8], [4.5, 8.39, 12.6], [1.8, 8.39, 13.2], [-1.8, 8.39, 13.2]],
-      concourse: [[-1.25, 4.48, 6.4], [-1.1, 4.48, 4.6], [-0.3, 4.48, 3.0], [1.1, 4.48, 3.2], [1.3, 4.48, 5.2], [0.4, 4.48, 6.5]],
-      platform1: [[-5.05, -0.43, -10], [-5.05, -0.43, -6], [-5.05, -0.43, 0], [-5.05, -0.43, 6], [-5.05, -0.43, 10], [-5.05, -0.43, 3], [-5.05, -0.43, -4]],
-      platform2: [[5.05, -0.43, -10], [5.05, -0.43, -6], [5.05, -0.43, 0], [5.05, -0.43, 6], [5.05, -0.43, 10], [5.05, -0.43, 3], [5.05, -0.43, -4]],
-    };
-    const passengerParents = { forecourt: surface, concourse, platform1: platform, platform2: platform };
-    const peoplePerZone = 16;
-    Object.entries(passengerParents).forEach(([zone, parent]) => {
-      passengerZones[zone] = [];
-      for (let i = 0; i < peoplePerZone; i++) {
+    passengerRoot = new THREE.Group(); root.add(passengerRoot);
+    const peopleCount = 52;
+    for (let i = 0; i < peopleCount; i++) {
         const person = new THREE.Group();
         const torso = new THREE.Mesh(torsoGeometry, passengerMaterials[i % passengerMaterials.length]);
         torso.position.y = 0.51; person.add(torso);
@@ -266,11 +272,9 @@
         // Passenger meshes move every frame. Avoid adding dozens of animated
         // shadow casters to a scene that must work on integrated laptop GPUs.
         person.traverse((part) => { if (part.isMesh) { part.castShadow = false; part.receiveShadow = false; } });
-        parent.add(person);
-        const item = { mesh: person, zone, index: i, phase: (i / peoplePerZone) * 0.82, leftLeg, rightLeg };
-        passengers.push(item); passengerZones[zone].push(item);
-      }
-    });
+        passengerRoot.add(person);
+        passengers.push({ mesh: person, index: i, startDelay: i * 0.42, leftLeg, rightLeg, zone: 'forecourt' });
+    }
 
     // Green route tubes are separated by level so the level controls stay meaningful.
     const routeCore = new THREE.MeshBasicMaterial({ color: '#23ed75', transparent: true, opacity: 0.98, depthWrite: false, toneMapped: false });
@@ -288,8 +292,12 @@
       Object.values(route).forEach((g) => { g.visible = false; });
       if (hold) {
         const direction = side;
-        routeTube(route.surface, [[0, 8.43, 12], [direction * 3.5, 8.43, 13.1], [direction * 7.5, 8.43, 13.8], [direction * 10.5, 8.43, 12.8]], 0.14, routeGlow);
-        routeTube(route.surface, [[0, 8.43, 12], [direction * 3.5, 8.43, 13.1], [direction * 7.5, 8.43, 13.8], [direction * 10.5, 8.43, 12.8]], 0.055, routeCore);
+        routeTube(route.surface, [[0, 8.43, 15], [direction * 3.5, 8.43, 15.2], [direction * 7.5, 8.43, 13.8], [direction * 10.5, 8.43, 12.8]], 0.14, routeGlow);
+        routeTube(route.surface, [[0, 8.43, 15], [direction * 3.5, 8.43, 15.2], [direction * 7.5, 8.43, 13.8], [direction * 10.5, 8.43, 12.8]], 0.055, routeCore);
+        const holdPath = [[0, 8.43, 15], [direction * 3.5, 8.43, 15.2], [direction * 7.5, 8.43, 13.8], [direction * 10.5, 8.43, 12.8]];
+        const holdMetrics = [0]; let holdLength = 0;
+        for (let i = 1; i < holdPath.length; i++) { holdLength += new THREE.Vector3(...holdPath[i - 1]).distanceTo(new THREE.Vector3(...holdPath[i])); holdMetrics.push(holdLength); }
+        movementPlans.hold = { points: holdPath, metrics: holdMetrics, length: holdLength, stages: { forecourt: Infinity, concourse: Infinity, platform1: Infinity, platform2: Infinity }, hold: true };
         // A small green holding-area beacon marks the safe staging point.
         const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.48, 0.12, 16), new THREE.MeshBasicMaterial({ color: '#29ea78', transparent: true, opacity: 0.78, toneMapped: false }));
         beacon.position.set(direction * 10.5, 8.48, 12.8); beacon.renderOrder = 10; route.surface.add(beacon);
@@ -297,17 +305,30 @@
       }
       const exit = exits.find((item) => item.id === exitId);
       const [x, , z] = exit.pos;
-      const forecourtPath = [[0, 8.43, 12], [side * 2.5, 8.43, 8.8], [x * 0.72, 8.55, z * 0.48], [x, 8.55, z], [x, 7.7, z + (z < 0 ? 0.62 : -0.62)], [x, 6.5, z + (z < 0 ? 1.0 : -1.0)], [x, 5.5, z + (z < 0 ? 1.5 : -1.5)], [x, 4.55, z + (z < 0 ? 2.0 : -2.0)]];
+      const forecourtPath = [[0, 8.43, 15], [side * 2.5, 8.43, 13.0], [x * 0.72, 8.55, z * 0.85], [x, 8.55, z], [x, 7.7, z + (z < 0 ? 0.62 : -0.62)], [x, 6.5, z + (z < 0 ? 1.0 : -1.0)], [x, 5.5, z + (z < 0 ? 1.5 : -1.5)], [x, 4.55, z + (z < 0 ? 2.0 : -2.0)]];
       const concoursePath = [[x, 4.55, z + (z < 0 ? 2.0 : -2.0)], [side * 6.2, 4.55, z * 0.35], [side * 3.2, 4.55, -0.2], [0, 4.55, 1.7], [side * 2.5, 4.55, 1.4], [side * 4.45, 3.0, 0.15], [side * 4.65, 2.0, 0.7]];
-      const platformPath = [[side * 4.65, 2.0, 0.7], [side * 5.05, 0.5, 2.5], [side * 5.05, 0.45, 6.5]];
+      const platformPath = [[side * 4.65, 2.0, 0.7], [side * 5.05, 0.5, 2.5], [side * 5.05, 0.45, 6.5], [side * 5.05, 0.45, 8.3]];
+      const totalPath = [...forecourtPath, ...concoursePath.slice(1), ...platformPath.slice(1)];
+      const metrics = [0];
+      let totalLength = 0;
+      for (let i = 1; i < totalPath.length; i++) {
+        totalLength += new THREE.Vector3(...totalPath[i - 1]).distanceTo(new THREE.Vector3(...totalPath[i]));
+        metrics.push(totalLength);
+      }
+      const distanceAlong = (points) => {
+        let d = 0; for (let i = 1; i < points.length; i++) d += new THREE.Vector3(...points[i - 1]).distanceTo(new THREE.Vector3(...points[i])); return d;
+      };
+      const stages = { forecourt: distanceAlong(forecourtPath), concourse: distanceAlong(forecourtPath) + distanceAlong(concoursePath), platform1: Infinity, platform2: Infinity };
+      stages[name] = Infinity;
+      movementPlans[name] = { points: totalPath, metrics, length: totalLength, stages, hold: false };
       [[forecourtPath, route.surface], [concoursePath, route.concourse], [platformPath, route.platform]].forEach(([points, parent]) => {
         routeTube(parent, points, 0.21, routeGlow);
         routeTube(parent, points, 0.07, routeCore);
       });
       return route;
     }
-    routeSets.platform1 = makeRoute('platform1', -1, 'A');
-    routeSets.platform2 = makeRoute('platform2', 1, 'B');
+    routeSets.platform1 = makeRoute('platform1', -1, 'C');
+    routeSets.platform2 = makeRoute('platform2', 1, 'D');
     routeSets.hold = makeRoute('hold', -1, null, true);
     routeSets.blocked = { surface: new THREE.Group(), concourse: new THREE.Group(), platform: new THREE.Group() };
     surface.add(routeSets.blocked.surface); concourse.add(routeSets.blocked.concourse); platform.add(routeSets.blocked.platform);
@@ -316,6 +337,18 @@
     routeSets.blocked.surface.visible = false; routeSets.blocked.concourse.visible = false; routeSets.blocked.platform.visible = false;
 
     groups = { surface, concourse, platform };
+    [
+      { title: 'METRO DROP-OFF', subtitle: 'Passenger starting point', pos: [0, 8.65, 15], kind: 'drop', level: 'surface' },
+      { title: 'STAIRS TO PLATFORMS', subtitle: 'Follow the green route', pos: [4.45, 2.9, 0.15], kind: 'gate', level: 'concourse' },
+      { title: 'LIFT', subtitle: 'Step-free access', pos: [6.5, 5.95, 0], kind: 'gate', level: 'concourse' },
+      { title: 'FARE GATES', subtitle: 'Concourse circulation', pos: [0, 5.65, 1.7], kind: 'gate', level: 'concourse' },
+      { title: 'WAITING AREA · PLATFORM 1', subtitle: 'Westbound side platform', pos: [-5.05, 0.72, 8.3], kind: 'wait', level: 'platform' },
+      { title: 'WAITING AREA · PLATFORM 2', subtitle: 'Eastbound side platform', pos: [5.05, 0.72, 8.3], kind: 'wait', level: 'platform' },
+    ].forEach((label) => {
+      const el = document.createElement('div'); el.className = `station-tag ${label.kind}`;
+      el.innerHTML = `<b>${label.title}</b><small>${label.subtitle}</small>`;
+      stationLabelRoot.appendChild(el); stationLabels.push({ ...label, el });
+    });
     exits.forEach((exit) => {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'exit-marker'; button.dataset.exit = exit.id;
@@ -360,6 +393,16 @@
         el.style.top = `${(-v.y * 0.5 + 0.5) * h}px`;
       }
     });
+    stationLabels.forEach((label) => {
+      const v = new THREE.Vector3(...label.pos).project(camera);
+      const levelVisible = activeLevel === 'all' || activeLevel === label.level || (activeLevel === 'platform' && label.level === 'platform');
+      const visible = levelVisible && v.z > -1 && v.z < 1;
+      label.el.style.display = visible ? 'grid' : 'none';
+      if (visible) {
+        label.el.style.left = `${(v.x * 0.5 + 0.5) * w}px`;
+        label.el.style.top = `${(-v.y * 0.5 + 0.5) * h}px`;
+      }
+    });
   }
 
   function animate() {
@@ -369,16 +412,38 @@
     try {
       const elapsed = clock.getElapsedTime();
       if (train) train.position.z = -6 + Math.sin(elapsed * 0.22) * 5.6;
+      const plan = movementPlans[routeChoice] || movementPlans.platform1;
+      const zoneCounts = { forecourt: 0, concourse: 0, platform1: 0, platform2: 0 };
       passengers.forEach((person) => {
-        const path = passengerLoops[person.zone];
-        const position = (elapsed * (0.24 + (person.index % 4) * 0.025) + person.phase) % 1;
-        const point = position * path.length;
-        const segment = Math.floor(point), fraction = point - segment;
-        const from = path[segment % path.length], to = path[(segment + 1) % path.length];
-        person.mesh.position.set(from[0] + (to[0] - from[0]) * fraction, from[1] + Math.abs(Math.sin(elapsed * 4 + person.phase * 8)) * 0.035, from[2] + (to[2] - from[2]) * fraction);
-        person.mesh.rotation.y = Math.atan2(to[0] - from[0], to[2] - from[2]);
-        const stride = Math.sin(elapsed * 6 + person.phase * 12) * 0.48;
+        const walking = Math.max(0, elapsed - person.startDelay);
+        const progress = Math.min(1, walking / currentJourneySeconds);
+        const distance = progress * plan.length;
+        let point, direction;
+        if (walking <= 0) {
+          // Staggered queue at the street drop-off, aligned to the green route.
+          const lane = person.index % 5, row = Math.floor(person.index / 5);
+          point = [((lane - 2) * 0.48), 8.46, 15.5 + Math.min(row, 3) * 0.45];
+          direction = [0, 0, -1];
+          person.zone = 'forecourt';
+        } else {
+          let segment = 1;
+          while (segment < plan.metrics.length - 1 && plan.metrics[segment] < distance) segment++;
+          const from = plan.points[segment - 1], to = plan.points[segment];
+          const span = Math.max(0.001, plan.metrics[segment] - plan.metrics[segment - 1]);
+          const fraction = Math.min(1, Math.max(0, (distance - plan.metrics[segment - 1]) / span));
+          point = [from[0] + (to[0] - from[0]) * fraction, from[1] + (to[1] - from[1]) * fraction, from[2] + (to[2] - from[2]) * fraction];
+          direction = [to[0] - from[0], to[2] - from[2]];
+          if (plan.hold || progress >= 1) person.zone = plan.hold ? 'forecourt' : routeChoice;
+          else person.zone = distance < plan.stages.forecourt ? 'forecourt' : distance < plan.stages.concourse ? 'concourse' : routeChoice;
+        }
+        const offsets = { forecourt: 8.46, concourse: 4.63, platform1: 0.05, platform2: 0.05 };
+        const showZone = activeLevel === 'all' || (activeLevel === 'surface' && person.zone === 'forecourt') || (activeLevel === 'concourse' && person.zone === 'concourse') || (activeLevel === 'platform' && person.zone.startsWith('platform'));
+        person.mesh.position.set(point[0], offsets[person.zone] + Math.abs(Math.sin(elapsed * 4 + person.index)) * (walking > 0 && progress < 1 ? 0.035 : 0), point[2]);
+        person.mesh.rotation.y = Math.atan2(direction[0], direction[1]);
+        const stride = walking > 0 && progress < 1 ? Math.sin(elapsed * 6 + person.index) * 0.48 : 0;
         person.leftLeg.rotation.x = stride; person.rightLeg.rotation.x = -stride;
+        person.mesh.visible = showZone && zoneCounts[person.zone] < (passengerTargetCounts[person.zone] || 0);
+        zoneCounts[person.zone]++;
       });
       renderer.render(scene, camera);
       updateMarkers();
@@ -452,12 +517,7 @@
         const ratio = count / capacity;
         const color = ratio >= 0.8 ? '#d94f49' : ratio >= 0.5 ? '#e9a332' : '#38a875';
         crowdSurfaces[name].material.color.set(color);
-        const agents = passengerZones[name];
-        if (agents) {
-          // Avatars are representative markers; scale their number with the modeled occupancy.
-          const visibleCount = Math.min(agents.length, 2 + Math.round(Math.min(1.25, ratio) * (agents.length - 2)));
-          agents.forEach((agent, index) => { agent.mesh.visible = index < visibleCount; });
-        }
+        passengerTargetCounts[name] = Math.max(3, Math.min(passengers.length, 3 + Math.round(Math.min(1, ratio) * 40)));
       });
       const p1 = (loads.platform1 || 0) / Math.max(1, loads.platformCapacity || 1);
       const p2 = (loads.platform2 || 0) / Math.max(1, loads.platformCapacity || 1);
@@ -465,6 +525,7 @@
       const concourseLoad = (loads.concourse || 0) / Math.max(1, loads.concourseCapacity || 1);
       const hold = forecourt >= 0.8 || concourseLoad >= 0.8 || (p1 >= 0.8 && p2 >= 0.8);
       const chosen = p1 <= p2 ? 'platform1' : 'platform2';
+      routeChoice = hold ? 'hold' : chosen;
       Object.entries(routeSets).forEach(([name, route]) => {
         if (name === 'blocked') return;
         const show = name === (hold ? 'hold' : chosen);
@@ -475,10 +536,10 @@
       routeSets.blocked.platform.visible = !hold && platformBlocked;
       const targetName = chosen === 'platform1' ? 'Platform 1 (west)' : 'Platform 2 (east)';
       const text = hold
-        ? `Congestion response: hold new arrivals in the marked street-level holding area; the green route redirects away from the overloaded ${concourseLoad >= 0.8 ? 'concourse' : forecourt >= 0.8 ? 'forecourt' : 'platforms'}.`
+        ? `Congestion response: passengers walk from the metro drop-off to the marked street holding area; the green path avoids the overloaded ${concourseLoad >= 0.8 ? 'concourse' : forecourt >= 0.8 ? 'forecourt' : 'platforms'}.`
         : platformBlocked
-          ? `Rerouted: follow the green path via Exit ${chosen === 'platform1' ? 'A' : 'B'} and the less-loaded ${targetName}; the red path marks the congested platform route.`
-          : `Suggested route: follow the green path via Exit ${chosen === 'platform1' ? 'A' : 'B'} to ${targetName}. Passenger figures and route update with the selected simulation minute.`;
+          ? `Rerouted: follow the green path from the metro drop-off via Exit ${chosen === 'platform1' ? 'C' : 'D'} and stairs to the less-loaded ${targetName}; red marks the congested route.`
+          : `Passenger route: metro drop-off → Exit ${chosen === 'platform1' ? 'C (south west)' : 'D (south east)'} → fare gates → stairs → ${targetName} waiting area. Green path and passenger flow match.`;
       if (routeStatusNode) routeStatusNode.textContent = text;
     },
   };
