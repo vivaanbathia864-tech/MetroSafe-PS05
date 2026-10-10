@@ -18,11 +18,12 @@ The supplied drawings support a schematic Type 1 side-platform station model. Ex
 
 ### Phase 1 — Establish the baseline
 
-- Confirm project files open offline on the target laptop/browser.
-- Record the station drawing references, visible exits and schematic geometry decisions.
-- Keep a known-good Git checkpoint before each feature phase.
+- [x] Audit the app entry point and confirm styles, scripts and Three.js are all local files.
+- [x] Record what the supplied planning sheets establish and which model details are schematic.
+- [x] Keep known-good Git checkpoints on `main` and push them to the private repository.
+- [ ] Open the Desktop copy in the target browser with internet disconnected and confirm the model renders.
 
-**Done when:** the team can launch the same baseline locally without network access and explain what is schematic.
+**Done when:** the team confirms the Desktop copy launches offline and can explain what is schematic. See [Phase 1 baseline record](BASELINE.md).
 
 ### Phase 2 — Event demand
 
