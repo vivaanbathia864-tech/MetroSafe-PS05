@@ -27,34 +27,34 @@ The supplied drawings support a schematic Type 1 side-platform station model. Ex
 
 ### Phase 2 — Event demand
 
-- Capture one event’s venue, attendance, end time and expected metro share.
-- Calculate the estimated metro rider demand for the demo station.
-- Produce an inspectable per-minute arrival profile and show its total reconciles with the estimate.
+- [x] Capture one event’s venue, attendance, end time and expected metro share.
+- [x] Calculate the estimated metro rider demand for the demo station.
+- [x] Produce an inspectable per-minute arrival profile and show its total reconciles with the estimate.
 
 **Done when:** changing inputs updates the profile, totals and peak minute consistently.
 
 ### Phase 3 — Station crowd picture
 
-- Map modeled forecourt, concourse and platform occupancy to distinct 3D colors.
-- Make levels, gates, stairs, lifts, waiting areas and exits easy to identify.
-- Allow the user to scrub or play through time and inspect the minute-level values.
+- [x] Map modeled forecourt, concourse and platform occupancy to distinct 3D colors.
+- [x] Make levels and exits selectable; explain features outside the 3D view to keep the station model clear.
+- [x] Allow the user to scrub or play through time and inspect the minute-level values.
 
 **Done when:** the selected minute in the timeline matches the displayed map and occupancy figures.
 
 ### Phase 4 — Operations response
 
-- Recommend a gate configuration from the modeled arrival rate.
-- Identify a street-level holding area; do not use stairs, lift landings, gate throats or platform edges as holding areas.
-- Suggest train-service readiness/augmentation timing where the scenario assumptions support it.
-- Generate a timed action plan and announcement drafts in English, Hindi and Gujarati.
+- [x] Recommend a gate configuration from the modeled arrival rate.
+- [x] Identify a street-level holding area; do not use stairs, lift landings, gate throats or platform edges as holding areas.
+- [x] Suggest train-service readiness/augmentation timing where the scenario assumptions support it.
+- [x] Generate a timed action plan and announcement drafts in English, Hindi and Gujarati.
 
 **Done when:** each recommendation has a visible reason, time and explicit assumption.
 
 ### Phase 5 — Surge exercise
 
-- Add a controllable sudden-release scenario.
-- Recalculate arrivals, queue pressure, station colors, recommendations, action plan and announcements.
-- Keep total modeled riders conserved when the scenario only changes timing.
+- [x] Add a controllable sudden-release scenario.
+- [x] Recalculate arrivals, queue pressure, station colors, recommendations, action plan and announcements.
+- [x] Keep total modeled riders conserved when the scenario only changes timing, including at early and late pulse starts.
 
 **Done when:** one action injects a surge and every downstream view updates together.
 

@@ -20,7 +20,7 @@ Largest-remainder rounding allocates the integer rider total across minutes with
 
 ### Surge
 
-The surge button moves 22% of estimated riders from after the selected ten-minute pulse into that ten-minute window. It does not change attendance or the total modeled rider count. The selected pulse start is a minute after event end. This tests the consequence of compression; it is not a probability forecast.
+The surge button moves 22% of estimated riders from baseline minutes outside the selected window into that ten-minute pulse. This works at early and late surge times and does not change attendance or the total modeled rider count. The selected pulse start is a minute after event end. It tests the consequence of compression; it is not a probability forecast.
 
 ## 3. Per-minute station flow
 
@@ -29,7 +29,7 @@ For every minute, the simulation updates these queues:
 1. **External forecourt** receives that minute's arrivals.
 2. **Ticket gates** admit up to `open gates × 58 passengers/minute`. The prototype prepares between 2 and 8 gates based on the maximum near-term arrival minute plus a small backlog allowance.
 3. **Concourse** receives gate flow. At most 220 people/minute are moved down the modeled stairs. People remaining in this queue stay in the concourse counter.
-4. **Platforms** receive stair flow, split 52%/48% across the side platforms.
+4. **Platforms** receive stair flow, split 52%/48% across the side platforms with whole-person rounding.
 5. **Trains** arrive on the suggested headway and board up to 650 modeled passengers at a service time. Boarding is allocated proportionally between the two platforms.
 
 Prototype zone thresholds used for heat-map color are forecourt 1,800, concourse 850 and both platforms combined 1,200 people. Below 50% is green, 50–80% amber, and 80% or above red. These values only make the demo legible; they are not published or approved capacities for any actual station.
@@ -46,7 +46,7 @@ Every capacity and threshold is exposed in this guide and in the UI. A real oper
 
 ## 5. 3D density view
 
-The existing station geometry is divided into street, concourse and platform groups. Four semi-transparent floor patches receive the current minute's occupancies: outside forecourt, concourse queue, platform 1 and platform 2. The material changes green/amber/red against each zone's prototype threshold. The timeline slider selects a minute; play advances through the two-hour scenario. Labels and the minute table help explain which modelled object each patch represents.
+The existing station geometry is divided into street, concourse and platform groups. Four semi-transparent floor patches receive the current minute's occupancies: outside forecourt, concourse queue, platform 1 and platform 2. The material changes green/amber/red against each zone's prototype threshold. The timeline slider selects one of 120 minutes; play advances through the two-hour scenario. Exit markers remain visible; labels for individual modeled fixtures are removed to keep the view clear. The outside legend and minute log explain the modeled zones.
 
 This is an area-level heat overlay. It does not render individual people, calculate local density in people/m², model opposing flows, infer crush risk, or read CCTV/AFC sensors.
 

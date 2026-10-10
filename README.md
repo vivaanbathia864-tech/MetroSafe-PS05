@@ -13,7 +13,7 @@ Open `index.html` in a modern desktop browser with WebGL enabled. No server, pac
 3. Move the timeline slider or press play. The map recolors the forecourt, concourse and both platforms for the selected minute. The full minute table is below the chart.
 4. Review the number of ticket gates, suggested event headway, external holding area and timed runbook.
 5. Choose English, Hindi or Gujarati and copy the draft announcement.
-6. Choose **Inject a 10-minute surge**. The model shifts 22% of riders from later minutes into a ten-minute pulse, preserves the total rider count, then recalculates the peak, gate plan, train plan, density map, action plan and announcements.
+6. Set the surge start time and choose **Test 10-minute surge**. The model re-times 22% of riders from outside that window into the ten-minute pulse, preserves the total rider count, then recalculates the peak, gate plan, train plan, density map, action plan and announcements. Choose **Restore baseline plan** to compare again.
 7. Open **How the prototype works** for formulas, limits and assumptions.
 
 ## Project files

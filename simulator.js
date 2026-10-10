@@ -38,8 +38,10 @@
 
   function distribute(total, weights) {
     if (!weights.length || total <= 0) return weights.map(() => 0);
-    const denominator = sum(weights) || weights.length;
-    const exact = weights.map((weight) => (total * (weight || 1)) / denominator);
+    const safeWeights = weights.map((weight) => Math.max(0, Number(weight) || 0));
+    const denominator = sum(safeWeights);
+    const exact = (denominator > 0 ? safeWeights : safeWeights.map(() => 1))
+      .map((weight) => (total * weight) / (denominator || weights.length));
     const result = exact.map(Math.floor);
     let remainder = total - sum(result);
     const fractions = exact.map((value, index) => ({ index, fraction: value - result[index] }))
@@ -58,13 +60,13 @@
     if (!withSurge || riders <= 0) return { arrivals: base, surgeCount: 0, surgeStart };
 
     const pulseStart = clamp(surgeStart, 8, 100);
-    const future = Array.from({ length: horizon - pulseStart - 10 }, (_, i) => pulseStart + 10 + i);
-    const available = sum(future.map((minute) => base[minute]));
-    const shifted = Math.min(Math.round(riders * 0.22), available);
+    const outsidePulse = Array.from({ length: horizon }, (_, minute) => minute)
+      .filter((minute) => minute < pulseStart || minute >= pulseStart + 10);
+    const shifted = Math.min(Math.round(riders * 0.22), sum(base));
     if (shifted <= 0) return { arrivals: base, surgeCount: 0, surgeStart: pulseStart };
 
-    const removed = distribute(shifted, future.map((minute) => base[minute]));
-    removed.forEach((count, index) => { base[future[index]] -= count; });
+    const removed = distribute(shifted, outsidePulse.map((minute) => base[minute]));
+    removed.forEach((count, index) => { base[outsidePulse[index]] -= count; });
     const pulseWeights = [0.65, 0.78, 0.95, 1.1, 1.18, 1.18, 1.12, 1.0, 0.88, 0.76];
     const pulse = distribute(shifted, pulseWeights);
     pulse.forEach((count, index) => { base[pulseStart + index] += count; });
@@ -108,18 +110,21 @@
       concourse += gateFlow;
       const stairFlow = Math.min(concourse, limits.stairCapacityPerMinute);
       concourse -= stairFlow;
-      const platformFlow = stairFlow;
-      platform1 += platformFlow * 0.52;
-      platform2 += platformFlow - platformFlow * 0.52;
+      const platform1Flow = Math.round(stairFlow * 0.52);
+      const platform2Flow = stairFlow - platform1Flow;
+      platform1 += platform1Flow;
+      platform2 += platform2Flow;
 
       const trainArrives = minute % headway === 0;
       let boardings = 0;
       if (trainArrives) {
         trains += 1;
-        boardings = Math.min(platform1 + platform2, limits.trainCapacity);
-        const ratio1 = (platform1 + platform2) ? platform1 / (platform1 + platform2) : 0.5;
-        platform1 -= boardings * ratio1;
-        platform2 -= boardings * (1 - ratio1);
+        const platformTotal = platform1 + platform2;
+        boardings = Math.min(platformTotal, limits.trainCapacity);
+        const platform1Boardings = platformTotal ? Math.round(boardings * platform1 / platformTotal) : 0;
+        const platform2Boardings = boardings - platform1Boardings;
+        platform1 -= platform1Boardings;
+        platform2 -= platform2Boardings;
         boarded += boardings;
       }
       maxForecourt = Math.max(maxForecourt, forecourt);
@@ -192,7 +197,7 @@
       ? `Request about ${extraCount} extra services in the 2-hour window.`
       : 'Keep event standby capacity available for dispatch.';
     byId('hold-recommendation').textContent = 'External forecourt only';
-    byId('hold-detail').textContent = `Peak modeled queue ${fmt(plan.maxForecourt)} / ${fmt(limits.forecourtCapacity)} demo spaces. Meter access if pressure rises.`;
+    byId('hold-detail').textContent = `Peak modeled queue ${fmt(plan.maxForecourt)} people / ${fmt(limits.forecourtCapacity)}-person demo threshold. Meter access if pressure rises.`;
     const status = byId('density-status');
     status.classList.toggle('busy', plan.status === 'busy');
     status.classList.toggle('critical', plan.status === 'critical');
@@ -311,14 +316,16 @@
   }
 
   function updateRiderEstimate() {
-    const riders = Math.round((Number(inputs.attendance.value) || 0) * clamp(Number(inputs.share.value) || 0, 0, 100) / 100);
+    const attendance = clamp(Number(inputs.attendance.value) || 0, 0, 150000);
+    const metroShare = clamp(Number(inputs.share.value) || 0, 0, 100);
+    const riders = Math.round(attendance * metroShare / 100);
     byId('rider-estimate').textContent = fmt(riders);
   }
 
   function buildMethodGuide() {
     const sections = [
       ['1. Demand inputs', `<p><code>attendance × metro share</code> estimates the metro-bound crowd. For this one-station demo, every metro-bound rider is assigned to the modeled station; this is intentionally conservative and must be replaced by a station-specific share before any pilot.</p>`],
-      ['2. Minute arrivals', `<p>The 120-minute baseline uses a normalized three-wave release curve (early, main and late departures). Every simulated minute sums to the estimated rider total. Surge mode moves 22% of riders from later minutes into one 10-minute pulse; it does not add attendees.</p>`],
+      ['2. Minute arrivals', `<p>The 120-minute baseline uses a normalized three-wave release curve (early, main and late departures). Every simulated minute sums to the estimated rider total. Surge mode re-times 22% of riders from outside the selected window into that 10-minute pulse; it does not add attendees.</p>`],
       ['3. Queue and capacity model', `<p>Each minute adds arrivals to the outside forecourt queue. Ticket gates admit up to 58 people/minute/gate (2-8 demo gates); up to 220 people/minute can move through stairs; each modeled train boards up to 650. Concourse, platform and holding thresholds are demo placeholders, not official capacity values.</p>`],
       ['4. Recommendations', `<p>The largest 5-minute arrival rate sets a suggested event headway: 6 minutes below 175 people/minute, 4 minutes from 175, and 3 minutes from 300. Gates scale with peak rate. The runbook adds staff, holding and train actions around the predicted peak and surge time.</p>`],
       ['5. 3D crowd layer', `<p>The timeline slider selects a simulated minute. Forecourt, concourse and both platform floor patches change from green to amber to red at 50% and 80% of prototype thresholds. The map shows density zones, not individual people or sensor measurements.</p>`],
@@ -332,7 +339,7 @@
     currentMinute = 0;
     updateRiderEstimate();
     byId('chart-riders').textContent = fmt(simulation.riders);
-    byId('peak-time-label').textContent = `Peak window: ${absoluteTime(simulation.peakMinute)} · minute ${simulation.peakMinute}`;
+    byId('peak-time-label').textContent = `Busiest minute: ${absoluteTime(simulation.peakMinute)} · +${simulation.peakMinute} min`;
     setResponse(simulation);
     renderActions(simulation);
     renderMinuteLog(simulation);

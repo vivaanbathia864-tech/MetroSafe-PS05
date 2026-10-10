@@ -39,6 +39,11 @@ input[type=text],input[type=time],input[type=number]{font-size:13px;height:38px}
 .level-option small,.exit-option small{font-size:9px}
 .map-caveat b{font-size:10px}
 .map-caveat p{font-size:9px}
+.feature-guide{border:1px solid #edf0ef;border-radius:7px;padding:8px 9px;background:#fcfdfd}
+.feature-guide summary{font-size:10px;font-weight:700;color:#40535c;cursor:pointer}
+.feature-guide ul{margin:7px 0 0;padding-left:17px;color:#718087;font-size:9px;line-height:1.55}
+.feature-guide li+li{margin-top:3px}
+.feature-guide b{color:#455b67}
 .viewer-help{font-size:9px;letter-spacing:.3px}
 .heat-key span,.viewer-bottom,.north-label{font-size:9px}
 .timeline-caption{display:flex;align-items:baseline;gap:8px;padding:9px 12px 0;color:#66767d}
