@@ -6,3 +6,58 @@
 
 .log-card{margin-top:13px;padding:0 15px}.log-card summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 0;cursor:pointer}.log-card summary::-webkit-details-marker{display:none}.log-card summary>span:nth-child(2){display:grid;gap:3px}.log-card summary b{font-size:10px}.log-card summary small{font-size:8px;color:#849096}.log-card[open] .summary-chevron{transform:rotate(180deg)}.table-scroll{max-height:360px;overflow:auto;border-top:1px solid #edf0ef}.table-scroll table{border-collapse:collapse;width:100%;min-width:920px;font-size:8px}.table-scroll th{position:sticky;top:0;background:#f6f8f8;color:#66767d;text-align:left;font-size:7px;letter-spacing:.45px;text-transform:uppercase;z-index:1}.table-scroll td,.table-scroll th{padding:7px 8px;border-bottom:1px solid #edf0ef;white-space:nowrap}.table-scroll td:nth-child(9){white-space:normal;min-width:220px;color:#63747c}.table-scroll tr.current-minute{background:#edf2ff}.table-scroll tr.current-minute td:first-child{font-weight:800;color:var(--blue)}
 @media(max-width:700px){.log-card summary small{line-height:1.5}}
+
+/* First-run guidance: clearer hierarchy and readable labels. */
+.quick-guide{margin:0 0 14px;padding:15px 18px;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 3px 12px #20384005}
+.quick-guide-heading{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.guide-spark{display:grid;place-items:center;width:30px;height:30px;flex:none;border-radius:9px;background:#eef2ff;color:var(--blue);font-size:16px}
+.quick-guide-heading h2{font-size:15px;margin:0 0 3px;letter-spacing:-.2px}
+.quick-guide-heading p{font-size:11px;color:var(--muted);margin:0}
+.guide-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;list-style:none;padding:0;margin:0}
+.guide-steps li{display:flex;align-items:flex-start;gap:9px;padding:10px;background:#f8faf9;border:1px solid #edf1ef;border-radius:8px}
+.guide-number{display:grid;place-items:center;flex:none;width:23px;height:23px;border-radius:50%;background:#e9efff;color:var(--blue);font-size:11px;font-weight:800}
+.guide-steps b{font-size:11px}
+.guide-steps p{font-size:10px;line-height:1.5;color:#68777e;margin:4px 0 0}
+.guide-steps em{font-style:normal;font-weight:700;color:#344c5a}
+.guide-more,.guide-link{display:inline-block;color:var(--blue);font-size:10px;font-weight:700;text-decoration:none}
+.guide-more{margin-left:auto;white-space:nowrap}
+.guide-link{margin-top:7px}
+.guide-more:hover,.guide-link:hover{text-decoration:underline}
+.field-label{font-size:10px;letter-spacing:.35px;margin:13px 0 6px}
+input[type=text],input[type=time],input[type=number]{font-size:13px;height:38px}
+.number-field span{font-size:10px;top:12px}
+.field-hint,.side-hint{font-size:10px;line-height:1.5;color:#75838a;margin:6px 0 10px}
+.button{font-size:11px;min-height:40px}
+.surge-title b{font-size:11px}
+.surge-title small,.surge-box output,.tiny-note{font-size:10px}
+.tiny-note{line-height:1.55}
+.card-heading h2,.section-title-row h2{font-size:15px}
+.card-heading p,.section-title-row p{font-size:10px;line-height:1.45}
+.step-no{font-size:11px}
+.section-heading h3{font-size:12px}
+.level-option b,.exit-option b{font-size:10px}
+.level-option small,.exit-option small{font-size:9px}
+.map-caveat b{font-size:10px}
+.map-caveat p{font-size:9px}
+.viewer-help{font-size:9px;letter-spacing:.3px}
+.heat-key span,.viewer-bottom,.north-label{font-size:9px}
+.timeline-caption{display:flex;align-items:baseline;gap:8px;padding:9px 12px 0;color:#66767d}
+.timeline-caption b{font-size:10px;color:#344c5a}
+.timeline-caption span{font-size:10px}
+.timeline-control{height:38px}
+.timeline-time{font-size:10px;min-width:42px}
+.timeline-control>span:last-child{font-size:10px;min-width:48px}
+.response-label b{font-size:11px}
+.response-value strong{font-size:12px}
+.response-value small,.stat span,.safety-rule p,.assumption-foot{font-size:9px}
+.stat small{font-size:8px}
+.action-copy,.action-copy b,.action-time{font-size:10px}
+.language-tab,.announcement-text,.copy-button{font-size:10px}
+.chart-foot{font-size:9px}
+.method-content section{font-size:10px}
+.method-content h3{font-size:11px}
+.method-card summary b,.log-card summary b{font-size:11px}
+.method-card summary small,.log-card summary small{font-size:9px}
+.page-footer{font-size:9px}
+@media(max-width:1050px){.guide-steps{grid-template-columns:1fr 1fr}.guide-steps li:last-child{grid-column:1/-1}}
+@media(max-width:720px){.quick-guide{padding:13px}.quick-guide-heading{align-items:flex-start}.guide-more{margin-left:0}.quick-guide-heading{flex-wrap:wrap}.guide-steps{grid-template-columns:1fr}.guide-steps li:last-child{grid-column:auto}.guide-steps p{font-size:11px}.timeline-caption{align-items:flex-start;flex-direction:column;gap:3px}}

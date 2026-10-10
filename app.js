@@ -10,29 +10,12 @@
     { id: 'C', name: 'South west', pos: [-7.2, 8.65, 6.7] },
     { id: 'D', name: 'South east', pos: [7.2, 8.65, 6.7] },
   ];
-  const featureTags = [
-    { label: 'STATION CANOPY', pos: [0, 10.15, 0], level: 'surface' },
-    { label: 'FORECOURT HOLDING AREA', pos: [0, 8.55, 12], level: 'surface' },
-    { label: 'TICKETING · FARE GATES', pos: [0, 5.9, -1.15], level: 'concourse' },
-    { label: 'CONCOURSE QUEUE', pos: [0, 5.35, 6.2], level: 'concourse' },
-    { label: 'STAIRS TO PLATFORM', pos: [-4.45, 3.0, 0.15], level: 'concourse' },
-    { label: 'STAIRS TO PLATFORM', pos: [4.45, 3.0, 0.15], level: 'concourse' },
-    { label: 'LIFT', pos: [-6.5, 5.85, 0], level: 'concourse' },
-    { label: 'LIFT', pos: [6.5, 5.85, 0], level: 'concourse' },
-    { label: 'WAITING AREA · PLATFORM 1', pos: [-5.05, 0.1, 6.2], level: 'platform' },
-    { label: 'WAITING AREA · PLATFORM 2', pos: [5.05, 0.1, 6.2], level: 'platform' },
-    { label: 'PLATFORM 1', pos: [-5.05, 0.2, -11.2], level: 'platform' },
-    { label: 'PLATFORM 2', pos: [5.05, 0.2, -11.2], level: 'platform' },
-    { label: 'TRACK 1', pos: [-1.67, -0.4, 10.5], level: 'platform' },
-    { label: 'TRACK 2', pos: [1.67, -0.4, 10.5], level: 'platform' },
-  ];
   const THREE = window.THREE;
   let renderer, scene, camera, root, groups, train, clock;
   let radius = 41, theta = Math.PI / 4, phi = 1.08;
   let target = THREE ? new THREE.Vector3(0, 3.8, 0) : null;
   let pointer = null, activeLevel = 'all', selectedExit = null;
   const markers = new Map();
-  let featureElements = [];
   let crowdSurfaces = null;
   const mats = {};
 
@@ -237,13 +220,6 @@
       button.addEventListener('click', () => selectExit(exit.id));
       markerRoot.appendChild(button); markers.set(exit.id, button);
     });
-    featureElements = featureTags.map((feature) => {
-      const label = document.createElement('span');
-      label.className = `feature-marker ${feature.level}-tag${feature.label === 'LIFT' ? ' lift-tag' : ''}`;
-      label.textContent = feature.label;
-      markerRoot.appendChild(label);
-      return { ...feature, element: label };
-    });
     clock = new THREE.Clock();
     setCamera();
     loading.classList.add('hidden');
@@ -272,17 +248,6 @@
       const v = new THREE.Vector3(...exit.pos).project(camera);
       const visible = v.z > -1 && v.z < 1;
       el.style.display = visible ? 'flex' : 'none';
-      if (visible) {
-        el.style.left = `${(v.x * 0.5 + 0.5) * w}px`;
-        el.style.top = `${(-v.y * 0.5 + 0.5) * h}px`;
-      }
-    });
-    featureElements.forEach((feature) => {
-      const el = feature.element;
-      const v = new THREE.Vector3(...feature.pos).project(camera);
-      const onActiveLevel = activeLevel === 'all' || activeLevel === feature.level;
-      const visible = onActiveLevel && v.z > -1 && v.z < 1;
-      el.style.display = visible ? 'block' : 'none';
       if (visible) {
         el.style.left = `${(v.x * 0.5 + 0.5) * w}px`;
         el.style.top = `${(-v.y * 0.5 + 0.5) * h}px`;

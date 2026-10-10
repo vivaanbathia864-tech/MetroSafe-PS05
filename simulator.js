@@ -291,10 +291,10 @@
 
   function updateAt(minute) {
     if (!simulation) return;
-    currentMinute = clamp(Math.round(minute), 0, limits.horizon);
+    currentMinute = clamp(Math.round(minute), 0, limits.horizon - 1);
     const row = simulation.rows[Math.min(currentMinute, limits.horizon - 1)];
     byId('minute-slider').value = currentMinute;
-    byId('minute-label').textContent = `Minute ${currentMinute}`;
+    byId('minute-label').textContent = `+${currentMinute} min`;
     byId('current-clock').textContent = absoluteTime(currentMinute);
     const maximumNow = Math.max(row.forecourt / limits.forecourtCapacity, row.concourse / limits.concourseCapacity, (row.platform1 + row.platform2) / limits.platformCapacity);
     const currentStatus = maximumNow >= .8 ? 'critical' : maximumNow >= .5 ? 'busy' : 'low';
@@ -338,7 +338,7 @@
     renderMinuteLog(simulation);
     showAnnouncement();
     updateAt(0);
-    byId('surge-button').textContent = surgeEnabled ? 'Restore baseline scenario' : 'Inject a 10-minute surge';
+    byId('surge-button').textContent = surgeEnabled ? 'Restore baseline plan' : 'Test 10-minute surge';
     byId('surge-button').classList.toggle('surge-active', surgeEnabled);
     byId('surge-minute-value').textContent = `+${inputs.surgeMinute.value} min`;
   }
@@ -351,6 +351,7 @@
   });
   byId('surge-button').addEventListener('click', () => { stopPlayback(); surgeEnabled = !surgeEnabled; regenerate(); });
   byId('minute-slider').addEventListener('input', (event) => updateAt(Number(event.target.value)));
+  document.querySelector('.guide-more').addEventListener('click', () => { byId('simulation-method').open = true; });
   document.querySelectorAll('.language-tab').forEach((tab) => tab.addEventListener('click', () => { activeLanguage = tab.dataset.lang; showAnnouncement(); }));
   byId('copy-announcement').addEventListener('click', async () => {
     const text = byId('announcement-text').textContent;
@@ -368,7 +369,7 @@
     if (playback) { stopPlayback(); return; }
     byId('play-button').textContent = '❚❚';
     playback = window.setInterval(() => {
-      if (currentMinute >= limits.horizon) { stopPlayback(); return; }
+      if (currentMinute >= limits.horizon - 1) { stopPlayback(); return; }
       updateAt(currentMinute + 1);
     }, 120);
   });
